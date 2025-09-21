@@ -6,7 +6,7 @@ import os
 import json
 
 # ProKerala API imports
-from prokerala_api import ApiClient
+# from prokerala_api import ApiClient  # Not needed - using direct HTTP requests
 
 app = FastAPI(title="AstroAI Backend", version="1.0.0")
 
