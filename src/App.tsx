@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { SplashPage } from './pages/SplashPage';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -6,83 +6,40 @@ import { KundliPage } from './pages/KundliPage';
 import { QuestionFlowPage } from './pages/QuestionFlowPage';
 import { AppLayout } from './components/layout/AppLayout';
 import { ToastContainer } from './components/ui/Toast';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  role: 'user' | 'astrologer' | 'admin';
-  credits: number;
-  dateOfBirth?: string;
-  timeOfBirth?: string;
-  placeOfBirth?: string;
-}
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 type AppState = 'splash' | 'login' | 'app';
 type CurrentRoute = '/' | '/ask' | '/kundli' | '/reports' | '/profile' | '/settings';
 
-function App() {
+function AppContent() {
   const [appState, setAppState] = useState<AppState>('splash');
   const [currentRoute, setCurrentRoute] = useState<CurrentRoute>('/');
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    // Check for existing session
-    const savedUser = localStorage.getItem('astroai_user');
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        setAppState('app');
-      } catch (error) {
-        console.error('Failed to parse saved user:', error);
-        localStorage.removeItem('astroai_user');
-      }
-    }
-  }, []);
+  const { user, loading, signOut } = useAuth();
 
   const handleSplashComplete = () => {
     setAppState('login');
-  };
-
-  const handleLogin = (loginUser: { id: string; name: string; email: string; avatar?: string }) => {
-    const newUser: User = {
-      ...loginUser,
-      role: 'user',
-      credits: 5, // Free questions
-      dateOfBirth: '1990-01-15',
-      timeOfBirth: '10:30 AM',
-      placeOfBirth: 'New Delhi, India'
-    };
-    
-    setUser(newUser);
-    localStorage.setItem('astroai_user', JSON.stringify(newUser));
-    setAppState('app');
-    setCurrentRoute('/');
   };
 
   const handleNavigate = (route: string) => {
     setCurrentRoute(route as CurrentRoute);
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('astroai_user');
+  const handleLogout = async () => {
+    await signOut();
     setAppState('login');
     setCurrentRoute('/');
   };
+
+  if (loading) {
+    return <SplashPage onComplete={() => {}} />;
+  }
 
   if (appState === 'splash') {
     return <SplashPage onComplete={handleSplashComplete} />;
   }
 
-  if (appState === 'login') {
-    return <LoginPage onLogin={handleLogin} />;
-  }
-
-  if (!user) {
-    return <LoginPage onLogin={handleLogin} />;
+  if (appState === 'login' || !user) {
+    return <LoginPage onComplete={() => setAppState('app')} />;
   }
 
   const renderCurrentPage = () => {
@@ -131,6 +88,14 @@ function App() {
       </AppLayout>
       <ToastContainer />
     </>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

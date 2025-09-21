@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import Select from 'react-select';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
+import { Input } from '../components/ui/Input';
 import { 
   Download, 
   Share2, 
@@ -10,15 +12,19 @@ import {
   ZoomIn,
   ZoomOut,
   Info,
-  Calendar
+  Calendar,
+  Loader2
 } from 'lucide-react';
 
 interface KundliPageProps {
   user: {
-    name: string;
-    dateOfBirth: string;
-    timeOfBirth: string;
-    placeOfBirth: string;
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+    photoURL: string | null;
+    role: 'end_user' | 'astrologer' | 'admin';
+    credits: number;
+    referralCode: string;
   };
 }
 
@@ -27,6 +33,32 @@ export function KundliPage({ user }: KundliPageProps) {
   const [showTransits, setShowTransits] = useState(false);
   const [selectedPlanet, setSelectedPlanet] = useState<any>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
+  
+  // Birth details form
+  const [birthDetails, setBirthDetails] = useState({
+    dob: '',
+    tob: '',
+    pob: '',
+    lat: 19.0760,
+    lon: 72.8777
+  });
+  
+  // API data
+  const [kundliData, setKundliData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Place search
+  const [selectedPlace, setSelectedPlace] = useState<any>(null);
+  const [placeOptions, setPlaceOptions] = useState<any[]>([
+    { value: { name: 'Mumbai', lat: 19.0760, lon: 72.8777, address: 'Mumbai, Maharashtra, India' }, label: 'Mumbai, Maharashtra, India' },
+    { value: { name: 'Delhi', lat: 28.7041, lon: 77.1025, address: 'Delhi, India' }, label: 'Delhi, India' },
+    { value: { name: 'Bangalore', lat: 12.9716, lon: 77.5946, address: 'Bangalore, Karnataka, India' }, label: 'Bangalore, Karnataka, India' },
+    { value: { name: 'Chennai', lat: 13.0827, lon: 80.2707, address: 'Chennai, Tamil Nadu, India' }, label: 'Chennai, Tamil Nadu, India' },
+    { value: { name: 'New York', lat: 40.7128, lon: -74.0060, address: 'New York, NY, USA' }, label: 'New York, NY, USA' },
+    { value: { name: 'London', lat: 51.5074, lon: -0.1278, address: 'London, UK' }, label: 'London, UK' }
+  ]);
+  const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
 
   const chartTypes = [
     { id: 'rasi', label: 'Rasi Chart', active: true },
@@ -35,12 +67,135 @@ export function KundliPage({ user }: KundliPageProps) {
     { id: 'bhava', label: 'Bhava Chart' }
   ];
 
-  const planets = [
+  // Geocoding function using Nominatim (free OpenStreetMap service)
+  const searchPlaces = async (inputValue: string) => {
+    if (!inputValue || inputValue.length < 2) {
+      setPlaceOptions([]);
+      return [];
+    }
+
+    setIsLoadingPlaces(true);
+    
+    try {
+      // Using Nominatim API (free, no API key required)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(inputValue)}&limit=8&addressdetails=1`
+      );
+      
+      const data = await response.json();
+      
+      const options = data.map((place: any) => ({
+        value: {
+          name: place.display_name,
+          lat: parseFloat(place.lat),
+          lon: parseFloat(place.lon),
+          address: place.display_name
+        },
+        label: place.display_name,
+        formatted_address: place.display_name
+      }));
+      
+      setPlaceOptions(options);
+      return options;
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      setPlaceOptions([]);
+      return [];
+    } finally {
+      setIsLoadingPlaces(false);
+    }
+  };
+
+  // Handle place selection
+  const handlePlaceChange = (selectedOption: any) => {
+    if (selectedOption) {
+      setSelectedPlace(selectedOption);
+      setBirthDetails({
+        ...birthDetails,
+        pob: selectedOption.value.address,
+        lat: selectedOption.value.lat,
+        lon: selectedOption.value.lon
+      });
+    }
+  };
+
+  // API call function
+  const fetchKundliData = async () => {
+    if (!birthDetails.dob || !birthDetails.tob || !birthDetails.pob) {
+      setError('Please fill in all birth details');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/kundli`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(birthDetails),
+      });
+
+      const data = await response.json();
+      
+      if (data.error) {
+        setError(data.message || 'Failed to fetch kundli data');
+      } else {
+        setKundliData(data.data);
+      }
+    } catch (err) {
+      setError('Failed to connect to API');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper function to get house coordinates
+  const getHouseCoordinates = (houseNumber: number) => {
+    const housePositions = {
+      1: { x: 162, y: 87 },   // House 1
+      2: { x: 237, y: 87 },   // House 2  
+      3: { x: 312, y: 87 },   // House 3
+      4: { x: 312, y: 162 },  // House 4
+      5: { x: 312, y: 237 },  // House 5
+      6: { x: 312, y: 312 },  // House 6
+      7: { x: 237, y: 312 },  // House 7
+      8: { x: 162, y: 312 },  // House 8
+      9: { x: 87, y: 312 },   // House 9
+      10: { x: 87, y: 237 },  // House 10
+      11: { x: 87, y: 162 },  // House 11
+      12: { x: 87, y: 87 }    // House 12
+    };
+    return housePositions[houseNumber as keyof typeof housePositions] || { x: 200, y: 200 };
+  };
+
+  // Get planets from API data or use mock data
+  const planets = kundliData?.planet_positions?.map((planet: any) => {
+    // Extract house number from house string (e.g., "House 5" -> 5)
+    const houseNumber = parseInt(planet.house?.replace('House ', '') || '1');
+    const coords = getHouseCoordinates(houseNumber);
+    
+    return {
+      name: planet.planet,
+      symbol: planet.symbol,
+      sign: planet.sign,
+      degree: planet.degree,
+      house: planet.house,
+      nakshatra: planet.nakshatra,
+      retrograde: planet.retrograde,
+      x: coords.x,
+      y: coords.y,
+      aiSummary: `${planet.planet} in ${planet.sign} indicates...`
+    };
+  }) || [
     { 
       name: 'Sun', 
       sign: 'Aries', 
       degree: '12°34\'', 
-      house: '10th', 
+      house: '10th House', 
       nakshatra: 'Bharani',
       retrograde: false,
       x: 200, 
@@ -51,7 +206,7 @@ export function KundliPage({ user }: KundliPageProps) {
       name: 'Moon', 
       sign: 'Cancer', 
       degree: '25°12\'', 
-      house: '1st', 
+      house: '1st House', 
       nakshatra: 'Pushya',
       retrograde: false,
       x: 100, 
@@ -62,7 +217,7 @@ export function KundliPage({ user }: KundliPageProps) {
       name: 'Mars', 
       sign: 'Leo', 
       degree: '8°45\'', 
-      house: '2nd', 
+      house: '2nd House', 
       nakshatra: 'Magha',
       retrograde: true,
       x: 300, 
@@ -73,8 +228,8 @@ export function KundliPage({ user }: KundliPageProps) {
       name: 'Mercury', 
       sign: 'Virgo', 
       degree: '18°22\'', 
-      house: '3rd', 
-      naksharna: 'Hasta',
+      house: '3rd House', 
+      nakshatra: 'Hasta',
       retrograde: false,
       x: 180, 
       y: 280,
@@ -98,7 +253,7 @@ export function KundliPage({ user }: KundliPageProps) {
         <div>
           <h1 className="h1 text-[var(--text-primary)] mb-2">Kundli Analysis</h1>
           <p className="text-[var(--text-secondary)]">
-            Interactive natal chart for {user.name}
+            Interactive natal chart for {user.displayName || 'User'}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -123,26 +278,137 @@ export function KundliPage({ user }: KundliPageProps) {
         {/* User Info Panel */}
         <Card className="lg:col-span-1">
           <h3 className="font-semibold text-[var(--text-primary)] mb-4">Birth Details</h3>
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs text-[var(--text-secondary)]">Date of Birth</p>
-              <p className="text-sm font-medium text-[var(--text-primary)]">
-                {user.dateOfBirth}
-              </p>
+          
+          {!kundliData ? (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-[var(--text-secondary)] block mb-1">Date of Birth</label>
+                <Input
+                  type="date"
+                  value={birthDetails.dob}
+                  onChange={(e) => setBirthDetails({...birthDetails, dob: e.target.value})}
+                  placeholder="YYYY-MM-DD"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-[var(--text-secondary)] block mb-1">Time of Birth</label>
+                <Input
+                  type="time"
+                  value={birthDetails.tob}
+                  onChange={(e) => setBirthDetails({...birthDetails, tob: e.target.value})}
+                  placeholder="HH:MM"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-[var(--text-secondary)] block mb-1">Place of Birth</label>
+                <Select
+                  value={selectedPlace}
+                  onChange={handlePlaceChange}
+                  onInputChange={(inputValue) => {
+                    searchPlaces(inputValue);
+                  }}
+                  options={placeOptions}
+                  isLoading={isLoadingPlaces}
+                  placeholder="Search for a city..."
+                  isSearchable
+                  isClearable
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      backgroundColor: 'var(--bg-700)',
+                      borderColor: 'rgba(255,255,255,0.1)',
+                      color: 'var(--text-primary)',
+                      minHeight: '40px',
+                      '&:hover': {
+                        borderColor: 'var(--accent-500)'
+                      }
+                    }),
+                    menu: (base) => ({
+                      ...base,
+                      backgroundColor: 'var(--bg-700)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      zIndex: 9999
+                    }),
+                    option: (base, state) => ({
+                      ...base,
+                      backgroundColor: state.isFocused ? 'var(--bg-600)' : 'var(--bg-700)',
+                      color: 'var(--text-primary)',
+                      '&:hover': {
+                        backgroundColor: 'var(--bg-600)'
+                      }
+                    }),
+                    singleValue: (base) => ({
+                      ...base,
+                      color: 'var(--text-primary)'
+                    }),
+                    input: (base) => ({
+                      ...base,
+                      color: 'var(--text-primary)'
+                    }),
+                    placeholder: (base) => ({
+                      ...base,
+                      color: 'var(--text-secondary)'
+                    })
+                  }}
+                />
+              </div>
+              
+              {error && (
+                <div className="text-xs text-red-400 bg-red-900/20 p-2 rounded">
+                  {error}
+                </div>
+              )}
+              
+              <Button
+                onClick={fetchKundliData}
+                disabled={loading}
+                fullWidth
+                className="mt-4"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Generating Kundli...
+                  </>
+                ) : (
+                  'Generate Kundli'
+                )}
+              </Button>
             </div>
-            <div>
-              <p className="text-xs text-[var(--text-secondary)]">Time of Birth</p>
-              <p className="text-sm font-medium text-[var(--text-primary)]">
-                {user.timeOfBirth}
-              </p>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs text-[var(--text-secondary)]">Date of Birth</p>
+                <p className="text-sm font-medium text-[var(--text-primary)]">
+                  {kundliData.birth_details?.date_of_birth || birthDetails.dob}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-[var(--text-secondary)]">Time of Birth</p>
+                <p className="text-sm font-medium text-[var(--text-primary)]">
+                  {kundliData.birth_details?.time_of_birth || birthDetails.tob}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-[var(--text-secondary)]">Place of Birth</p>
+                <p className="text-sm font-medium text-[var(--text-primary)]">
+                  {kundliData.birth_details?.place_of_birth || birthDetails.pob}
+                </p>
+              </div>
+              
+              <Button
+                onClick={() => setKundliData(null)}
+                variant="secondary"
+                size="sm"
+                fullWidth
+                className="mt-4"
+              >
+                Edit Details
+              </Button>
             </div>
-            <div>
-              <p className="text-xs text-[var(--text-secondary)]">Place of Birth</p>
-              <p className="text-sm font-medium text-[var(--text-primary)]">
-                {user.placeOfBirth}
-              </p>
-            </div>
-          </div>
+          )}
 
           <hr className="my-4 border-[rgba(255,255,255,0.1)]" />
 
@@ -254,7 +520,7 @@ export function KundliPage({ user }: KundliPageProps) {
               </g>
 
               {/* Planets */}
-              {planets.map((planet, index) => (
+              {planets.map((planet: any) => (
                 <g key={planet.name}>
                   {/* Planet Circle */}
                   <circle
@@ -277,7 +543,7 @@ export function KundliPage({ user }: KundliPageProps) {
                     fill="white"
                     className="pointer-events-none font-medium"
                   >
-                    {planet.name.charAt(0)}
+                    {planet.symbol || planet.name.charAt(0)}
                   </text>
                   
                   {/* Retrograde indicator */}
@@ -316,7 +582,7 @@ export function KundliPage({ user }: KundliPageProps) {
           <h3 className="font-semibold text-[var(--text-primary)] mb-4">Planet Positions</h3>
           
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            {planets.map((planet) => (
+            {planets.map((planet: any) => (
               <div
                 key={planet.name}
                 className="p-3 bg-[var(--bg-800)] rounded-lg border border-[rgba(255,255,255,0.05)] hover:border-[rgba(255,255,255,0.1)] transition-smooth cursor-pointer"
@@ -324,7 +590,7 @@ export function KundliPage({ user }: KundliPageProps) {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-[var(--accent-500)] rounded-full flex items-center justify-center text-xs text-white font-medium">
-                    {planet.name.charAt(0)}
+                    {planet.symbol || planet.name.charAt(0)}
                   </div>
                   <span className="font-medium text-[var(--text-primary)]">
                     {planet.name}
@@ -351,14 +617,23 @@ export function KundliPage({ user }: KundliPageProps) {
               Today's Transits
             </h4>
             <div className="space-y-2">
-              <div className="text-xs">
-                <span className="text-[var(--text-secondary)]">Moon:</span>
-                <span className="text-[var(--text-primary)] ml-1">Entering Sagittarius</span>
-              </div>
-              <div className="text-xs">
-                <span className="text-[var(--text-secondary)]">Mercury:</span>
-                <span className="text-[var(--text-primary)] ml-1">Direct in Capricorn</span>
-              </div>
+              {kundliData?.todays_transits?.map((transit: string, index: number) => (
+                <div key={index} className="text-xs">
+                  <span className="text-[var(--text-secondary)]">{transit.split(':')[0]}:</span>
+                  <span className="text-[var(--text-primary)] ml-1">{transit.split(':')[1]}</span>
+                </div>
+              )) || (
+                <>
+                  <div className="text-xs">
+                    <span className="text-[var(--text-secondary)]">Moon:</span>
+                    <span className="text-[var(--text-primary)] ml-1">Entering Sagittarius</span>
+                  </div>
+                  <div className="text-xs">
+                    <span className="text-[var(--text-secondary)]">Mercury:</span>
+                    <span className="text-[var(--text-primary)] ml-1">Direct in Capricorn</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </Card>

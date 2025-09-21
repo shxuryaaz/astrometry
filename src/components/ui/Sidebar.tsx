@@ -16,7 +16,7 @@ import {
 import { Button } from './Button';
 
 interface SidebarProps {
-  userRole?: 'user' | 'astrologer' | 'admin';
+  userRole?: 'end_user' | 'astrologer' | 'admin';
   activeRoute?: string;
   onNavigate: (route: string) => void;
 }
@@ -25,21 +25,21 @@ interface NavItem {
   icon: typeof Home;
   label: string;
   route: string;
-  roles: ('user' | 'astrologer' | 'admin')[];
+  roles: ('end_user' | 'astrologer' | 'admin')[];
 }
 
 const navItems: NavItem[] = [
-  { icon: Home, label: 'Dashboard', route: '/', roles: ['user', 'astrologer', 'admin'] },
-  { icon: MessageSquare, label: 'Ask Questions', route: '/ask', roles: ['user'] },
-  { icon: Sparkles, label: 'Kundli', route: '/kundli', roles: ['user', 'astrologer'] },
-  { icon: FileText, label: 'Reports', route: '/reports', roles: ['user', 'astrologer'] },
+  { icon: Home, label: 'Dashboard', route: '/', roles: ['end_user', 'astrologer', 'admin'] },
+  { icon: MessageSquare, label: 'Ask Questions', route: '/ask', roles: ['end_user'] },
+  { icon: Sparkles, label: 'Kundli', route: '/kundli', roles: ['end_user', 'astrologer'] },
+  { icon: FileText, label: 'Reports', route: '/reports', roles: ['end_user', 'astrologer'] },
   { icon: Users, label: 'Clients', route: '/clients', roles: ['astrologer', 'admin'] },
   { icon: BarChart3, label: 'Analytics', route: '/analytics', roles: ['admin'] },
-  { icon: Settings, label: 'Settings', route: '/settings', roles: ['user', 'astrologer', 'admin'] },
-  { icon: User, label: 'Profile', route: '/profile', roles: ['user', 'astrologer', 'admin'] },
+  { icon: Settings, label: 'Settings', route: '/settings', roles: ['end_user', 'astrologer', 'admin'] },
+  { icon: User, label: 'Profile', route: '/profile', roles: ['end_user', 'astrologer', 'admin'] },
 ];
 
-export function Sidebar({ userRole = 'user', activeRoute = '/', onNavigate }: SidebarProps) {
+export function Sidebar({ userRole = 'end_user', activeRoute = '/', onNavigate }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 

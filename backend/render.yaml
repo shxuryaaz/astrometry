@@ -1,0 +1,17 @@
+# Render deployment configuration for AstroAI Backend
+services:
+  - type: web
+    name: astroai-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn fastapi_server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PROKERALA_CLIENT_ID
+        sync: false  # Set this in Render dashboard
+      - key: PROKERALA_CLIENT_SECRET
+        sync: false  # Set this in Render dashboard
+    healthCheckPath: /health
+    autoDeploy: true

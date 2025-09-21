@@ -8,10 +8,13 @@ interface AppLayoutProps {
   currentRoute?: string;
   onNavigate: (route: string) => void;
   user?: {
-    name: string;
-    email: string;
-    avatar?: string;
-    credits?: number;
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+    photoURL: string | null;
+    role: 'end_user' | 'astrologer' | 'admin';
+    credits: number;
+    referralCode: string;
   };
 }
 
@@ -27,7 +30,7 @@ export function AppLayout({
       {/* Sidebar */}
       <div className="hidden lg:block">
         <Sidebar
-          userRole={userRole}
+          userRole={user?.role || userRole}
           activeRoute={currentRoute}
           onNavigate={onNavigate}
         />
@@ -47,7 +50,7 @@ export function AppLayout({
       {/* Mobile Sidebar */}
       <div className="lg:hidden">
         <Sidebar
-          userRole={userRole}
+          userRole={user?.role || userRole}
           activeRoute={currentRoute}
           onNavigate={onNavigate}
         />

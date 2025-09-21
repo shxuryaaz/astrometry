@@ -15,10 +15,13 @@ import {
 
 interface DashboardPageProps {
   user: {
-    name: string;
-    email: string;
-    avatar?: string;
-    credits?: number;
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+    photoURL: string | null;
+    role: 'end_user' | 'astrologer' | 'admin';
+    credits: number;
+    referralCode: string;
   };
   onNavigate: (route: string) => void;
 }
@@ -51,22 +54,20 @@ export function DashboardPage({ user, onNavigate }: DashboardPageProps) {
     }
   ];
 
-  const referralCode = "ASTRO2025";
-
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Welcome Section */}
       <div className="flex items-center gap-4 mb-8">
         <div className="w-16 h-16 rounded-full bg-[var(--accent-500)] flex items-center justify-center text-2xl font-bold text-white">
-          {user.avatar ? (
-            <img src={user.avatar} alt={user.name} className="w-16 h-16 rounded-full" />
+          {user.photoURL ? (
+            <img src={user.photoURL} alt={user.displayName || 'User'} className="w-16 h-16 rounded-full" />
           ) : (
-            user.name.charAt(0).toUpperCase()
+            (user.displayName || user.email || 'U').charAt(0).toUpperCase()
           )}
         </div>
         <div>
           <h1 className="h1 text-[var(--text-primary)]">
-            Welcome, {user.name} ✨
+            Welcome, {user.displayName || 'User'} ✨
           </h1>
           <p className="text-[var(--text-secondary)]">
             Ready to explore your cosmic insights?
@@ -196,9 +197,9 @@ export function DashboardPage({ user, onNavigate }: DashboardPageProps) {
               Free Questions Left
             </h3>
             <p className="text-2xl font-bold text-[var(--accent-500)] mb-4">
-              {user.credits || 0} / 5
+              {user.credits} / 5
             </p>
-            {(user.credits || 0) === 0 && (
+            {user.credits === 0 && (
               <Button
                 onClick={() => onNavigate('/unlock')}
                 variant="primary"
@@ -228,12 +229,12 @@ export function DashboardPage({ user, onNavigate }: DashboardPageProps) {
               <p className="text-xs text-[var(--text-secondary)] mb-1">Your referral code:</p>
               <div className="flex items-center justify-between">
                 <code className="font-mono text-[var(--text-primary)] font-medium">
-                  {referralCode}
+                  {user.referralCode}
                 </code>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigator.clipboard.writeText(referralCode)}
+                  onClick={() => navigator.clipboard.writeText(user.referralCode)}
                 >
                   Copy
                 </Button>

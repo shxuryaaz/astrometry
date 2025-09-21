@@ -1,31 +1,22 @@
 import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { useAuth } from '../context/AuthContext';
 
 interface LoginPageProps {
-  onLogin: (user: { id: string; name: string; email: string; avatar?: string }) => void;
+  onComplete: () => void;
 }
 
-export function LoginPage({ onLogin }: LoginPageProps) {
+export function LoginPage({ onComplete }: LoginPageProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const { signInWithGoogle } = useAuth();
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     
-    // Simulate Google OAuth flow
     try {
-      // In a real app, this would integrate with Google OAuth
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock user data
-      const mockUser = {
-        id: '1',
-        name: 'John Doe',
-        email: 'john.doe@gmail.com',
-        avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=1'
-      };
-      
-      onLogin(mockUser);
+      await signInWithGoogle();
+      onComplete();
     } catch (error) {
       console.error('Login failed:', error);
     } finally {

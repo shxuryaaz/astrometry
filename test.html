@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shaurya Singh - Resume Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Helvetica', 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .editor-panel {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .preview-panel {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        
+        h2 {
+            margin: 20px 0 15px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        input[type="text"], 
+        input[type="email"], 
+        input[type="tel"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .button-group {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        /* Preview Styling */
+        .resume {
+            padding: 30px;
+            background: white;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .resume-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ccc;
+        }
+        
+        .resume-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .resume-contact {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 14px;
+        }
+        
+        .resume-section {
+            margin-bottom: 20px;
+        }
+        
+        .resume-section-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            border-bottom: 1px solid #999;
+            padding-bottom: 3px;
+        }
+        
+        .resume-entry {
+            margin-bottom: 15px;
+        }
+        
+        .resume-entry-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+        }
+        
+        .resume-organization {
+            font-weight: bold;
+        }
+        
+        .resume-location {
+            font-style: italic;
+        }
+        
+        .resume-date {
+            font-style: italic;
+        }
+        
+        .resume-entry-details {
+            margin-top: 5px;
+            margin-left: 15px;
+        }
+        
+        .resume-list {
+            list-style-type: none;
+        }
+        
+        .resume-list li {
+            margin-bottom: 5px;
+            text-align: justify;
+        }
+        
+        .resume-list li:before {
+            content: "•";
+            margin-right: 8px;
+        }
+        
+        .two-column {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .column {
+            width: 48%;
+        }
+        
+        .instructions {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .instructions ul {
+            margin-left: 20px;
+        }
+        
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Shaurya Singh - Resume Editor</h1>
+    
+    <div class="container">
+        <div class="editor-panel">
+            <div class="instructions">
+                <h3>Instructions</h3>
+                <p>Edit your resume content in the fields below. The preview will update automatically.</p>
+                <p>Click "Export to PDF" when you're done to download your resume.</p>
+            </div>
+            
+            <div class="section">
+                <h2>Personal Information</h2>
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" value="Shaurya Singh">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone</label>
+                    <input type="tel" id="phone" value="+91 7982130057">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" value="shauvajps@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" value="New Delhi, India">
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Education</h2>
+                <div class="form-group">
+                    <label for="school">School</label>
+                    <input type="text" id="school" value="Japan Public School, Noida">
+                </div>
+                <div class="form-group">
+                    <label for="degree">Degree</label>
+                    <input type="text" id="degree" value="High School Diploma">
+                </div>
+                <div class="form-group">
+                    <label for="educationDate">Date</label>
+                    <input type="text" id="educationDate" value="Apr 2011 – Apr 2025">
+                </div>
+                <div class="form-group">
+                    <label for="coursework">Coursework</label>
+                    <input type="text" id="coursework" value="Computer Science, Mathematics, Physics">
+                </div>
+                <div class="form-group">
+                    <label for="score">Score</label>
+                    <input type="text" id="score" value="83.2%">
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Work Experience</h2>
+                <div class="form-group">
+                    <label for="mckinseyRole">McKinsey Role</label>
+                    <input type="text" id="mckinseyRole" value="Forward Growth Program Fellow · Internship">
+                </div>
+                <div class="form-group">
+                    <label for="mckinseyDate">McKinsey Date</label>
+                    <input type="text" id="mckinseyDate" value="Sep 2025 – Present">
+                </div>
+                <div class="form-group">
+                    <label for="mckinseyDescription">McKinsey Description</label>
+                    <textarea id="mckinseyDescription">- Selected for McKinsey’s Forward Growth Program to tackle complex, real-world problems and sharpen strategic decision-making skills.
+- Collaborated with peers to apply structured problem-solving frameworks, run quantitative analyses, and deliver actionable recommendations.
+- Presented findings to senior mentors; received recognition for clarity and impact of insights.</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="agilowRole">Agilow Role</label>
+                    <input type="text" id="agilowRole" value="Founding Engineer">
+                </div>
+                <div class="form-group">
+                    <label for="agilowDate">Agilow Date</label>
+                    <input type="text" id="agilowDate" value="Jul 2025 – Present">
+                </div>
+                <div class="form-group">
+                    <label for="agilowDescription">Agilow Description</label>
+                    <textarea id="agilowDescription">- Built real-time voice command based systems using streaming APIs and NLP, reducing user input time by 40%.
+- Engineered AI-driven app configuration adapting UI based on real-time user behavior.
+- Built scalable backend services with FastAPI to serve AI features, focusing on low-latency.</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="investmentRole">Investment Keeda Role</label>
+                    <input type="text" id="investmentRole" value="Lead Software Engineer (AIML)">
+                </div>
+                <div class="form-group">
+                    <label for="investmentDate">Investment Keeda Date</label>
+                    <input type="text" id="investmentDate" value="Jul 2025 – Present">
+                </div>
+                <div class="form-group">
+                    <label for="investmentDescription">Investment Keeda Description</label>
+                    <textarea id="investmentDescription">- Productionized AI trading models improving signal accuracy by 35%
+- Built inference pipeline handling daily events at 95% uptime.
+- Automated financial report analysis using NLP, cutting manual workload by 50% (~120 hours/month).</textarea>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button onclick="updatePreview()">Update Preview</button>
+                <button onclick="exportToPDF()">Export to PDF</button>
+            </div>
+        </div>
+        
+        <div class="preview-panel">
+            <h2>Resume Preview</h2>
+            <div id="resume-preview" class="resume">
+                <!-- Preview will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updatePreview() {
+            const resumePreview = document.getElementById('resume-preview');
+            
+            // Get all input values
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const email = document.getElementById('email').value;
+            const location = document.getElementById('location').value;
+            
+            const school = document.getElementById('school').value;
+            const degree = document.getElementById('degree').value;
+            const educationDate = document.getElementById('educationDate').value;
+            const coursework = document.getElementById('coursework').value;
+            const score = document.getElementById('score').value;
+            
+            const mckinseyRole = document.getElementById('mckinseyRole').value;
+            const mckinseyDate = document.getElementById('mckinseyDate').value;
+            const mckinseyDescription = document.getElementById('mckinseyDescription').value;
+            
+            const agilowRole = document.getElementById('agilowRole').value;
+            const agilowDate = document.getElementById('agilowDate').value;
+            const agilowDescription = document.getElementById('agilowDescription').value;
+            
+            const investmentRole = document.getElementById('investmentRole').value;
+            const investmentDate = document.getElementById('investmentDate').value;
+            const investmentDescription = document.getElementById('investmentDescription').value;
+            
+            // Generate the resume HTML
+            resumePreview.innerHTML = `
+                <div class="resume-header">
+                    <div class="resume-name">${name}</div>
+                    <div class="resume-contact">${phone} | ${email} | ${location}</div>
+                </div>
+                
+                <div class="resume-section">
+                    <div class="resume-section-title">Education</div>
+                    <div class="resume-entry">
+                        <div class="resume-entry-header">
+                            <span class="resume-organization">${school}</span>
+                            <span class="resume-date">${educationDate}</span>
+                        </div>
+                        <div>${degree}</div>
+                        <div>Coursework: ${coursework}</div>
+                        <div><strong>Score:</strong> ${score}</div>
+                    </div>
+                </div>
+                
+                <div class="resume-section">
+                    <div class="resume-section-title">Work Experience</div>
+                    
+                    <div class="resume-entry">
+                        <div class="resume-entry-header">
+                            <span class="resume-organization">McKinsey & Company</span>
+                            <span class="resume-date">${mckinseyDate}</span>
+                        </div>
+                        <div class="resume-location">Gurugram, Haryana, India</div>
+                        <div>${mckinseyRole}</div>
+                        <ul class="resume-list resume-entry-details">
+                            ${mckinseyDescription.split('\n').map(item => `<li>${item.replace('- ', '')}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <div class="resume-entry">
+                        <div class="resume-entry-header">
+                            <span class="resume-organization">Agilow</span>
+                            <span class="resume-date">${agilowDate}</span>
+                        </div>
+                        <div class="resume-location">Remote</div>
+                        <div>${agilowRole}</div>
+                        <ul class="resume-list resume-entry-details">
+                            ${agilowDescription.split('\n').map(item => `<li>${item.replace('- ', '')}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <div class="resume-entry">
+                        <div class="resume-entry-header">
+                            <span class="resume-organization">Investment Keeda</span>
+                            <span class="resume-date">${investmentDate}</span>
+                        </div>
+                        <div class="resume-location">Noida, India</div>
+                        <div>${investmentRole}</div>
+                        <ul class="resume-list resume-entry-details">
+                            ${investmentDescription.split('\n').map(item => `<li>${item.replace('- ', '')}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="resume-section">
+                    <div class="resume-section-title">Projects & Hackathons</div>
+                    <div class="resume-entry">
+                        <div class="resume-entry-header">
+                            <span class="resume-organization">CredTech Hackathon 2025 — Team BlackSwan</span>
+                        </div>
+                        <div>BlackSwan Credit Terminal · github.com/shxuryaaz/BlackSwan-Credit-system</div>
+                        <ul class="resume-list resume-entry-details">
+                            <li>Developed a real-time credit intelligence platform integrating structured financial data and unstructured news streams</li>
+                            <li>Delivered transparent credit scores with interactive dashboards (profiles, news/events, explanations)</li>
+                            <li>Addressed traditional rating agency delays by providing continuous, interpretable creditworthiness updates</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="resume-entry">
+                        <div class="resume-entry-header">
+                            <span class="resume-organization">Smart Insights Engine</span>
+                        </div>
+                        <div>Customer Support Insights Platform · github.com/shxuryaaz/SmartInsightsEngine</div>
+                        <ul class="resume-list resume-entry-details">
+                            <li>Built modular LLM + vector search platform for semantic ticket search, summarization, and classification</li>
+                            <li>Implemented FastAPI microservices with ChromaDB vector store; dashboard for analysts</li>
+                            <li>Improved resolution speed and classification accuracy in prototype deployments</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="resume-section">
+                    <div class="resume-section-title">Achievements</div>
+                    <ul class="resume-list">
+                        <li>4th Place, Swafinix AI Hackathon 2025 — AI Payment Reminder Agent (top 0.5% of 800+ teams)</li>
+                        <li>RoboSoccer Finalist, Tryst'24 @ IIT Delhi — programmed autonomous robots</li>
+                        <li>2nd Place, TechnoX'19 @ IIT BHU — national engineering competition</li>
+                    </ul>
+                </div>
+                
+                <div class="resume-section">
+                    <div class="resume-section-title">Extracurricular Activities</div>
+                    <ul class="resume-list">
+                        <li>Founder, Serene MUN — organized conference with 300+ participants across 5 committees; secured sponsorships and managed operations</li>
+                        <li>Led multiple school-wide tech and community events with 200+ attendees</li>
+                    </ul>
+                </div>
+                
+                <div class="resume-section">
+                    <div class="resume-section-title">Additional</div>
+                    <div class="two-column">
+                        <div class="column">
+                            <div><strong>Languages:</strong> English (Fluent), Hindi (Native), Russian (Conversational)</div>
+                            <div><strong>Certifications:</strong> Machine Learning I (Columbia University), SWE Job Simulation (JPMorgan Chase)</div>
+                        </div>
+                        <div class="column">
+                            <div><strong>Technical Skills:</strong> Python, PyTorch, FastAPI, OpenAI API, HuggingFace, LangChain, ChromaDB, Kafka, Docker, React, SQL</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function exportToPDF() {
+            const element = document.getElementById('resume-preview');
+            const opt = {
+                margin: 10,
+                filename: 'shaurya_singh_resume.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            html2pdf().set(opt).from(element).save();
+        }
+        
+        // Initialize the preview on page load
+        window.onload = updatePreview;
+    </script>
+</body>
+</html>

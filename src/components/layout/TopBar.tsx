@@ -5,10 +5,13 @@ import { Button } from '../ui/Button';
 
 interface TopBarProps {
   user?: {
-    name: string;
-    email: string;
-    avatar?: string;
-    credits?: number;
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+    photoURL: string | null;
+    role: 'end_user' | 'astrologer' | 'admin';
+    credits: number;
+    referralCode: string;
   };
 }
 
@@ -30,7 +33,7 @@ export function TopBar({ user }: TopBarProps) {
 
       <div className="flex items-center gap-3">
         {/* Credits (if user) */}
-        {user?.credits !== undefined && (
+        {user && (
           <div className="px-3 py-1 bg-[var(--accent-500)] text-white rounded-full text-sm font-medium">
             {user.credits} Credits
           </div>
@@ -51,14 +54,14 @@ export function TopBar({ user }: TopBarProps) {
             className="flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--glass)] transition-smooth"
           >
             <div className="w-8 h-8 rounded-full bg-[var(--accent-500)] flex items-center justify-center text-sm font-medium text-white">
-              {user?.avatar ? (
-                <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full" />
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt={user.displayName || 'User'} className="w-8 h-8 rounded-full" />
               ) : (
-                user?.name?.charAt(0).toUpperCase() || 'U'
+                (user?.displayName || user?.email || 'U').charAt(0).toUpperCase()
               )}
             </div>
             <span className="hidden md:block text-[var(--text-primary)] font-medium">
-              {user?.name || 'User'}
+              {user?.displayName || 'User'}
             </span>
             <ChevronDown className="w-4 h-4 text-[var(--text-secondary)]" />
           </button>
@@ -66,7 +69,7 @@ export function TopBar({ user }: TopBarProps) {
           {showProfileMenu && (
             <div className="absolute top-full right-0 mt-2 w-48 bg-[var(--bg-700)] border border-[rgba(255,255,255,0.1)] rounded-[var(--radius-md)] shadow-xl z-50">
               <div className="p-3 border-b border-[rgba(255,255,255,0.1)]">
-                <p className="font-medium text-[var(--text-primary)]">{user?.name}</p>
+                <p className="font-medium text-[var(--text-primary)]">{user?.displayName}</p>
                 <p className="text-sm text-[var(--text-secondary)]">{user?.email}</p>
               </div>
               

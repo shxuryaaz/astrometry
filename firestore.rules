@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users:
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // Questions: user can create and read their own, admins can read all
+    match /questions/{doc} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isAdmin());
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow delete: if false;
+    }
+
+    // Kundli cache: read publicly? better to limit
+    match /kundli_cache/{doc} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+
+    // Reports: only owner or admin
+    match /reports/{doc} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isAdmin());
+    }
+
+    // Payments: only owner and admins
+    match /payments/{doc} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isAdmin());
+    }
+
+    // KB documents: only admins can write, authenticated users can read
+    match /kb_documents/{doc} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && isAdmin();
+    }
+
+    function isAdmin() {
+      return request.auth.token.admin == true;
+    }
+  }
+}
+
