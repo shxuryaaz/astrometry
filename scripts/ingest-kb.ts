@@ -1,4 +1,5 @@
 #!/usr/bin/env ts-node
+/* eslint-disable @typescript-eslint/no-require-imports */
 
 import * as admin from "firebase-admin";
 import { ingestLocalPDF } from "../functions/src/lib/kbProcessor";

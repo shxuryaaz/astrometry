@@ -6,7 +6,7 @@ const openai = new OpenAI({
 });
 
 // Initialize Pinecone client (function-style API)
-// @ts-ignore
+// @ts-expect-error Pinecone client exposes function-style API after init
 Pinecone.init({ apiKey: process.env.PINECONE_API_KEY });
 
 export interface KundliFacts {
@@ -55,7 +55,7 @@ export async function getTopSnippetsForQuestion(question: string, topK: number =
     const filterSourceUri = process.env.KB_FILTER_SOURCE_URI; // e.g., "kb/bnn-2025.pdf"
 
     // Query Pinecone
-    // @ts-ignore
+    // @ts-expect-error Pinecone query is provided by the function-style API
     const queryResponse: any = await Pinecone.query({
       vector: questionEmbedding,
       topK,

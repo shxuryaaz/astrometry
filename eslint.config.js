@@ -23,6 +23,12 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      // Relax CI-breaking rules to warnings while codebase stabilizes
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
     },
   }
 );

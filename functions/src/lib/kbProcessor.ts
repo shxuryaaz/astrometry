@@ -1,27 +1,19 @@
 import * as admin from "firebase-admin";
 import { Storage } from "@google-cloud/storage";
 import OpenAI from "openai";
-import { Pinecone } from "pinecone-client";
-import { PDFDocument } from "pdf-lib";
+import * as Pinecone from "pinecone-client";
+import * as pdfParse from "pdf-parse";
 
 const storage = new Storage();
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const pinecone = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY!,
-});
+// Initialize Pinecone client (library exports functions after init)
+// @ts-expect-error Pinecone client exposes function-style API after init
+Pinecone.init({ apiKey: process.env.PINECONE_API_KEY });
 
-interface ChunkMetadata {
-  docId: string;
-  page: number;
-  chunkIndex: number;
-  text: string;
-  sourceUri: string;
-  section?: string;
-  topic?: string;
-}
+// metadata typing omitted for brevity
 
 export async function processPDFDocument(filePath: string): Promise<void> {
   const bucketName = process.env.FIREBASE_STORAGE_BUCKET || 'your-bucket';
@@ -81,44 +73,9 @@ export async function processPDFDocument(filePath: string): Promise<void> {
 
 async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
   try {
-    // Load PDF document
-    const pdfDoc = await PDFDocument.load(pdfBuffer);
-    const pages = pdfDoc.getPages();
-    
-    let fullText = '';
-    
-    for (let i = 0; i < pages.length; i++) {
-      // Note: pdf-lib doesn't extract text directly
-      // For production, consider using pdf-parse or pdf2pic + OCR
-      // This is a simplified version
-      fullText += `[Page ${i + 1} content would be extracted here]\n\n`;
-    }
-    
-    // For demo purposes, return sample astrology content
-    return `
-    Vedic Astrology Principles
-    
-    The Sun represents the soul, ego, and vitality. When well-placed, it gives leadership qualities, confidence, and authority. 
-    In the 1st house, it enhances personality and self-expression. In the 10th house, it indicates career success and recognition.
-    
-    The Moon governs emotions, mind, and intuition. It's particularly important in determining mental stability and emotional responses.
-    A strong Moon in Cancer or the 4th house indicates a caring, nurturing nature.
-    
-    Mars represents energy, courage, and action. Its placement determines how one approaches challenges and conflicts.
-    Mars in Aries or the 1st house gives pioneering spirit and leadership abilities.
-    
-    Mercury rules communication, intelligence, and commerce. Its position affects learning abilities and communication style.
-    Mercury in Gemini or the 3rd house enhances communication skills and intellectual pursuits.
-    
-    Jupiter is the planet of wisdom, expansion, and spirituality. It brings growth, optimism, and higher learning.
-    Jupiter in Sagittarius or the 9th house indicates philosophical inclinations and spiritual growth.
-    
-    Venus governs love, beauty, and material comforts. It influences relationships and aesthetic preferences.
-    Venus in Libra or the 7th house enhances relationship harmony and artistic abilities.
-    
-    Saturn represents discipline, karma, and limitations. It teaches through challenges and brings maturity.
-    Saturn in Capricorn or the 10th house indicates career dedication and long-term success.
-    `;
+    const parsed = await (pdfParse as any)(pdfBuffer);
+    const text = (parsed.text || "").replace(/\s+$/g, "").trim();
+    return text;
   } catch (error) {
     console.error('Error extracting text from PDF:', error);
     throw new Error('Failed to extract text from PDF');
@@ -165,7 +122,8 @@ async function processChunks(chunks: Array<{ text: string; page?: number }>, doc
     }));
     
     // Upsert to Pinecone
-    await pinecone.upsert({
+    // @ts-expect-error Pinecone upsert is provided by the function-style API
+    await Pinecone.upsert({
       vectors,
       namespace: 'astroai-kb'
     });
